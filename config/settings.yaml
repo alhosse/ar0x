@@ -4,9 +4,23 @@ project:
   mode: "defensive_audit"
 
 llm:
+  # Supported providers: "ollama" | "gemini" | "openai" | "anthropic" | "groq" | "openrouter"
   provider: "ollama"
-  base_url: "http://127.0.0.1:11434"
+  
+  # Examples:
+  # - Ollama     : "qwen2.5-coder:7b" or "llama3.1:8b"
+  # - Gemini     : "gemini-2.5-flash" or "gemini-2.5-pro"
+  # - OpenAI     : "gpt-4o" or "gpt-4o-mini"
+  # - Anthropic  : "claude-3-5-sonnet-latest"
+  # - Groq       : "llama-3.3-70b-versatile"
   model: "qwen2.5-coder:7b"
+  
+  # Used for Ollama or custom OpenAI-compatible endpoints
+  base_url: "http://127.0.0.1:11434"
+  
+  # Leave empty to read automatically from ENV (AR0X_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY)
+  api_key: ""
+  
   temperature: 0.1
   timeout_seconds: 60
 
