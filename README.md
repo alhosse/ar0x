@@ -1,23 +1,24 @@
 # 🛡️ ar0x — Autonomous AI-Powered Web Security Auditing & Remediation Framework
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
-![LLM](https://img.shields.io/badge/LLM-Ollama%20%7C%20Qwen2.5--Coder-orange)
+![LLM](https://img.shields.io/badge/LLM-Gemini%20%7C%20OpenAI%20%7C%20Claude%20%7C%20Ollama-orange)
 ![Protocol](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-green)
 ![Report](https://img.shields.io/badge/Output-SARIF%20v2.1.0-purple)
 
 ## 📌 Overview
-**`ar0x`** is an autonomous, multi-agent web security auditing and remediation framework developed as a Senior Graduation Project. It simulates the analytical workflow of a human security engineer using a **ReAct (Reason + Act)** loop powered by local Large Language Models (via **Ollama**).
+**`ar0x`** is an autonomous, multi-agent web security auditing and remediation framework developed as a Senior Graduation Project. It simulates the analytical workflow of a human security engineer using a **ReAct (Reason + Act)** loop powered by a **Model-Agnostic LLM Engine** (supporting Cloud APIs like **Google Gemini, OpenAI, Anthropic Claude, Groq**, as well as 100% local execution via **Ollama**).
 
-To overcome common AI limitations such as hallucinations and noisy scanner outputs, `ar0x` introduces:
+### Key Architectural Pillars
 1. **Multi-Agent Architecture:** Specialized sub-agents for configuration auditing, authentication/session review, and input validation architecture.
-2. **ADVA (Automated Differential Verification Analysis):** A verification engine that compares candidate findings against baseline HTTP telemetry to eliminate false positives.
-3. **Explainable AI (XAI) Traces:** Every finding includes a step-by-step reasoning chain explaining *why* an issue was flagged and *how* it was verified.
-4. **Local RAG Knowledge Base:** Enriches verified findings with exact **OWASP Top 10** categories, **CWE** identifiers, and actionable code remediation snippets.
-5. **SARIF v2.1.0 Reporting:** Generates standardized reports ready for direct integration into GitHub Advanced Security and CI/CD pipelines.
+2. **Model-Agnostic LLM Engine:** Seamlessly switch between cloud frontier models (for deep reasoning) and local SLMs (for strict data privacy and offline auditing).
+3. **ADVA (Automated Differential Verification Analysis):** Compares candidate findings against baseline HTTP telemetry invariants to eliminate false positives.
+4. **Explainable AI (XAI) Traces:** Every finding includes a step-by-step reasoning chain explaining *why* an issue was flagged and *how* it was verified.
+5. **Local RAG Knowledge Base:** Enriches verified findings with exact **OWASP Top 10** categories, **CWE** identifiers, and actionable code remediation snippets.
+6. **SARIF v2.1.0 Reporting:** Generates standardized reports ready for direct integration into GitHub Advanced Security and CI/CD pipelines.
 
 ---
 
-## ⚙️ What Does `ar0x` Actually Do? (Workflow Pipeline)
+## ⚙️ Architecture & Workflow Pipeline
 
 ```text
 [Target URL] 
@@ -26,7 +27,9 @@ To overcome common AI limitations such as hallucinations and noisy scanner outpu
 1. [Passive Discovery Crawler] ──► Collects baseline HTTP status, headers, cookies & endpoints
      │
      ▼
-2. [Central ReAct Orchestrator] ◄──► [Local LLM via Ollama (qwen2.5-coder:7b)]
+2. [Central ReAct Orchestrator] ◄──► [Unified Multi-Provider LLM Engine]
+     │                                 ├─ Cloud : Gemini / OpenAI / Claude / Groq
+     │                                 └─ Local : Ollama (Qwen2.5-Coder / Llama3)
      │
      ├──► Agent 1: ConfigAuditAgent      (Audits CSP, HSTS, X-Frame-Options, CORS)
      ├──► Agent 2: AuthReviewAgent       (Audits Session Cookies: Secure, HttpOnly, SameSite)
@@ -44,33 +47,51 @@ To overcome common AI limitations such as hallucinations and noisy scanner outpu
 
 ---
 
-## 🧠 LLM Integration (How to Connect Ollama)
+## 🧠 Multi-Provider LLM Integration (Cloud & Local)
 
-`ar0x` is designed to run 100% locally for data privacy and zero API costs using **Ollama**.
+`ar0x` is completely model-agnostic. You can connect it to **any Cloud LLM API** or run it **locally offline** by adjusting `config/settings.yaml` or exporting an environment variable.
 
-### Step 1: Install & Start Ollama
-Download and install Ollama from [ollama.com](https://ollama.com), or via Linux terminal:
-```bash
-curl -fsSL [https://ollama.com/install.sh](https://ollama.com/install.sh) | sh
-ollama serve
-```
+### Supported LLM Providers
 
-### Step 2: Pull the Recommended Model
-By default, `ar0x` uses `qwen2.5-coder:7b` (or you can use `llama3.1:8b` / `mistral`):
-```bash
-ollama pull qwen2.5-coder:7b
-```
+| Provider | Type | Example Models | API Key Env Variable |
+| :--- | :---: | :--- | :--- |
+| **Google Gemini** | Cloud API | `gemini-2.5-flash`, `gemini-2.5-pro` | `GEMINI_API_KEY` |
+| **OpenAI** | Cloud API | `gpt-4o`, `gpt-4o-mini` | `OPENAI_API_KEY` |
+| **Anthropic** | Cloud API | `claude-3-5-sonnet-latest` | `ANTHROPIC_API_KEY` |
+| **Groq / OpenRouter** | Cloud API | `llama-3.3-70b-versatile`, `deepseek-chat` | `AR0X_API_KEY` |
+| **Ollama** | Local (Offline) | `qwen2.5-coder:7b`, `llama3.1:8b`, `mistral` | *None Required* |
 
-### Step 3: Configure `config/settings.yaml`
-You can customize the LLM model, temperature, and local endpoint inside `config/settings.yaml`:
-```yaml
-llm:
-  provider: "ollama"
-  base_url: "[http://127.0.0.1:11434](http://127.0.0.1:11434)"
-  model: "qwen2.5-coder:7b"
-  temperature: 0.1
-  timeout_seconds: 60
-```
+### Option A: Using Cloud LLMs (Gemini / OpenAI / Claude / Groq)
+1. Export your API key in the terminal:
+   ```bash
+   # Example for Google Gemini:
+   export GEMINI_API_KEY="your-api-key-here"
+
+   # Or for OpenAI / Groq:
+   export OPENAI_API_KEY="sk-your-api-key-here"
+   ```
+2. Update `config/settings.yaml`:
+   ```yaml
+   llm:
+     provider: "gemini"            # or "openai", "anthropic", "groq"
+     model: "gemini-2.5-flash"     # or "gpt-4o-mini", "claude-3-5-sonnet-latest"
+     temperature: 0.1
+   ```
+
+### Option B: Using Local LLMs via Ollama (100% Offline & Private)
+1. Start Ollama and pull your preferred model:
+   ```bash
+   ollama serve
+   ollama pull qwen2.5-coder:7b
+   ```
+2. Update `config/settings.yaml`:
+   ```yaml
+   llm:
+     provider: "ollama"
+     base_url: "[http://127.0.0.1:11434](http://127.0.0.1:11434)"
+     model: "qwen2.5-coder:7b"
+     temperature: 0.1
+   ```
 
 ---
 
@@ -81,7 +102,7 @@ llm:
 git clone [https://github.com/YOUR_USERNAME/ar0x.git](https://github.com/YOUR_USERNAME/ar0x.git)
 cd ar0x
 
-# 2. (Optional) Create a virtual environment
+# 2. (Optional) Create and activate a virtual environment
 python3 -m venv venv
 source venv/bin/activate   # On Windows: venv\Scripts\activate
 
@@ -93,7 +114,7 @@ pip install -r requirements.txt
 
 ## 💻 Usage & CLI Commands
 
-You can run `ar0x` from the root directory using `python -m cli.main`.
+Run `ar0x` from the project root directory using `python -m cli.main`.
 
 ### CLI Arguments Reference
 
@@ -104,21 +125,21 @@ You can run `ar0x` from the root directory using `python -m cli.main`.
 | `--demo` | — | Run using offline simulated HTTP telemetry for quick testing & demos | No | `False` |
 | `--help` | `-h` | Show help message and all available CLI options | No | — |
 
-### Examples
+### Execution Examples
 
 **1. View CLI Help Menu:**
 ```bash
 python -m cli.main --help
 ```
 
-**2. Run Offline Demo Mode (Fast test without network requests):**
+**2. Run Offline Demo Mode (Fast verification without active network requests):**
 ```bash
 python -m cli.main --target [https://example.com](https://example.com) --output demo_report.sarif.json --demo
 ```
 
 **3. Run Passive Security Posture Audit on an Authorized Target:**
 ```bash
-python -m cli.main -t [https://testphp.vulnweb.com](https://testphp.vulnweb.com) -o audit_results.sarif.json
+python -m cli.main -t [https://example.com](https://example.com) -o audit_results.sarif.json
 ```
 
 **4. Run Automated Unit Tests:**
@@ -130,7 +151,7 @@ python -m unittest discover -s tests
 
 ## 📊 Sample Output (XAI + SARIF v2.1.0)
 
-When `ar0x` finishes an assessment, it generates a structured `.sarif.json` file containing the finding, CWE/OWASP mapping, ADVA verification status, and the **Explainable AI (XAI)** reasoning trace:
+`ar0x` generates a standardized `.sarif.json` report containing the finding, CWE/OWASP mapping, ADVA verification status, and the **Explainable AI (XAI)** reasoning trace:
 
 ```json
 {
@@ -158,14 +179,15 @@ When `ar0x` finishes an assessment, it generates a structured `.sarif.json` file
 ## 📂 Project Structure
 ```text
 ar0x/
-├── README.md                          # Complete documentation, LLM setup & usage guide
+├── README.md                          # Complete documentation, Multi-LLM setup & usage guide
 ├── requirements.txt                   # Python dependencies (httpx, pydantic, pyyaml, rich)
 ├── config/
-│   └── settings.yaml                  # Ollama LLM configuration, ADVA thresholds & scope settings
+│   └── settings.yaml                  # Multi-LLM provider configuration, ADVA thresholds & scope
 ├── cli/
 │   └── main.py                        # Command-Line Interface (CLI) entrypoint
 ├── core/
 │   ├── orchestrator.py                # Central ReAct Coordinator & State Machine
+│   ├── llm_client.py                  # Unified Multi-Provider LLM Client (Gemini, OpenAI, Claude, Ollama)
 │   ├── adva.py                        # Automated Differential Verification Analysis (False-Positive Filter)
 │   └── mcp_client.py                  # Model Context Protocol (MCP) read-only telemetry interface
 ├── agents/
