@@ -1,0 +1,25 @@
+project:
+  name: "ar0x"
+  version: "1.0.0"
+  mode: "defensive_audit"
+
+llm:
+  provider: "ollama"
+  base_url: "http://127.0.0.1:11434"
+  model: "qwen2.5-coder:7b"
+  temperature: 0.1
+  timeout_seconds: 60
+
+crawler:
+  max_depth: 2
+  rate_limit_requests_per_sec: 2
+  respect_robots_txt: true
+
+adva:
+  enable_differential_check: true
+  confidence_threshold: 0.75
+
+reporting:
+  format: "sarif-2.1.0"
+  include_xai_trace: true
+  output_dir: "./reports"
